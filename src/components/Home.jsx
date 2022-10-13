@@ -1,13 +1,16 @@
 import React from "react";
+import { connect } from "react-redux";
+import { Navigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "./Header";
 import LeftSide from "./LeftSide";
 import Main from "./Main";
 import RightSide from "./RightSide";
 
-const Home = () => {
+const Home = (props) => {
   return (
     <div>
+      { !props.user && <Navigate to="/"/> }
       <Header />
 
       <Container>
@@ -21,13 +24,13 @@ const Home = () => {
           </p>
         </Section>
 
-        <Content>
-          <Layout>
-            <LeftSide />
-            <Main />
-            <RightSide />
-          </Layout>
-        </Content>
+        <Content></Content>
+
+        <Layout>
+          <LeftSide />
+          <Main />
+          <RightSide />
+        </Layout>
       </Container>
     </div>
   );
@@ -90,4 +93,8 @@ const Layout = styled.div`
   }
 `;
 
-export default Home;
+const mapStateToProps = (state) => ({
+  user: state.userState.user,
+});
+
+export default connect(mapStateToProps)(Home);
