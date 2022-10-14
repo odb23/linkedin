@@ -1,13 +1,41 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import styled from "styled-components";
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import PostModal from "./PostModal";
+import { connect } from "react-redux";
+import { getArticlesAPI } from "../actions";
+import ReactPlayer from "react-player";
 
-const Main = () => {
+const Main = (props) => {
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    props.getPosts();
+  }, [showModal]);
+
+  const posts = useMemo(() => {
+    return [...props.posts];
+  }, [props.posts]);
+
+  const handleClick = (e) => {
+    e.preventDefault();
+    if (e.target !== e.currentTarget) {
+      return;
+    }
+
+    setShowModal(!showModal);
+  };
+
   return (
     <Container>
       <ShareBox>
         <div>
-          <img src="/images/user.svg" alt="" />
-          <button>Start a post</button>
+          {props.user && props.user.photoURL ? (
+            <img src={props.user.photoURL} alt="" />
+          ) : (
+            <img src="/images/user.svg" alt="" />
+          )}
+          <button onClick={(e) => handleClick(e)}>Start a post</button>
         </div>
         <div>
           <button>
@@ -29,62 +57,82 @@ const Main = () => {
           </button>
         </div>
       </ShareBox>
+      <Content>
+        {props.loading && <img src="/images/spin-loading.gif" alt="" />}
+      </Content>
 
-      <div>
-        <Article>
-          <SharedActor>
-            <a>
-              <img alt="" src="/images/user.svg" />
-              <div>
-                <span>Title</span>
-                <span>Info</span>
-                <span>Date</span>
-              </div>
-            </a>
-            <button>
-              <img src="/images/ellipsis..svg" alt="" />
-            </button>
-          </SharedActor>
+      {posts.length < 1 ? (
+        <p>No articles to show</p>
+      ) : (
+        <div>
+          {posts.length > 0 &&
+            posts.map((post, key) => (
+              <Article key={key}>
+                <SharedActor>
+                  <a>
+                    <img alt="" src={post.actor.image} />
+                    <div>
+                      <span>{post.actor.title}</span>
+                      <span>{post.actor.description}</span>
+                      <span>
+                        {post.actor.date.toDate().toLocaleDateString()}
+                      </span>
+                    </div>
+                  </a>
+                  <button>
+                    <img src="/images/ellipsis..svg" alt="" />
+                  </button>
+                </SharedActor>
 
-          <Description>Description</Description>
-          <SharedImage>
-            <a>
-              <img src="/images/shared-image.jpg" alt="" />
-            </a>
-          </SharedImage>
+                <Description>{post.description}</Description>
+                <SharedImage>
+                  <a>
+                    {post.sharedImg ? (
+                      <img src={post.sharedImg} alt="" />
+                    ) : (
+                      post.video && (
+                        <ReactPlayer width="100%" url={post.video} />
+                      )
+                    )}
+                  </a>
+                </SharedImage>
 
-          <SocialCount>
-            <li>
-              <button>
-                <img src="/images/like-icon.png" alt="" />
-                <img src="/images/clap-icon.png" alt="" />
-                <span>75</span>
-              </button>
-            </li>
-            <li>
-              <a>10 comments</a>
-            </li>
-          </SocialCount>
-          <SocialActions>
-            <button>
-              <i class="far fa-thumbs-up"></i>
-              <span>Like</span>
-            </button>
-            <button>
-              <i class="far fa-comment"></i>
-              <span>Comment</span>
-            </button>
-            <button>
-              <i class="fas fa-share"></i>
-              <span>Share</span>
-            </button>
-            <button>
-              <i class="fab fa-telegram-plane"></i>
-              <span>Send</span>
-            </button>
-          </SocialActions>
-        </Article>
-      </div>
+                <SocialCount>
+                  <li>
+                    <button>
+                      <img src="/images/like-icon.png" alt="" />
+                      <img src="/images/clap-icon.png" alt="" />
+                      <span>75</span>
+                    </button>
+                  </li>
+                  <li>
+                    <a>10 comments</a>
+                  </li>
+                </SocialCount>
+                <SocialActions>
+                  <button>
+                    <i className="far fa-thumbs-up"></i>
+                    <span>Like</span>
+                  </button>
+                  <button>
+                    <i className="far fa-comment"></i>
+                    <span>Comment</span>
+                  </button>
+                  <button>
+                    <i className="fas fa-share"></i>
+                    <span>Share</span>
+                  </button>
+                  <button>
+                    <i className="fab fa-telegram-plane"></i>
+                    <span>Send</span>
+                  </button>
+                </SocialActions>
+              </Article>
+            ))}
+        </div>
+      )}
+
+      {showModal && <PostModal handleClick={handleClick} />}
     </Container>
   );
 };
@@ -205,7 +253,7 @@ const SharedActor = styled.div`
           color: black;
         }
 
-        &:nth-child(n+1) {
+        &:nth-child(n + 1) {
           font-size: 12px;
           color: rgba(0, 0, 0, 0.6);
         }
@@ -221,7 +269,7 @@ const SharedActor = styled.div`
     border: none;
     outline: none;
   }
-`
+`;
 
 const Description = styled.div`
   padding: 0 16px;
@@ -274,34 +322,55 @@ const SocialCount = styled.ul`
 `;
 
 const SocialActions = styled.div`
-align-items: center;
-display: flex;
-justify-content: center;
-margin: 0;
-min-height: 40px;
-padding: 4px 8px;
-width: 100%;
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  min-height: 40px;
+  padding: 4px 8px;
+  width: 100%;
 
-button{
+  button {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    /* justify-content: center; */
     padding: 8px;
     color: #0a66c2;
     border: none;
     background-color: #fff;
     width: 100%;
 
-    i{
-        font-size: 18px;
+    i {
+      font-size: 18px;
     }
 
-    @media(min-width: 768px) {
-        span {
-            margin-left: 8px;
-        }
+    span {
+      margin-left: 4px;
     }
-}
+
+    @media (min-width: 768px) {
+      span {
+        margin-left: 8px;
+      }
+    }
+  }
 `;
 
-export default Main;
+const Content = styled.div`
+  text-align: center;
+  & > img {
+    width: 30px;
+  }
+`;
+
+const mapStateToProps = (state) => ({
+  user: state.userState.user,
+  loading: state.postState.loading,
+  posts: state.postState.posts,
+});
+
+const mapDispatchToProps = (dispatch) => ({
+  getPosts: () => dispatch(getArticlesAPI()),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(Main);
